@@ -1,6 +1,7 @@
 .venv/
 .idea/
 __pycache__/
+.pytest_cache/
 *.pyc
 *.pyo
 *.pyd
@@ -8,3 +9,15 @@ __pycache__/
 *.sqlite3
 report.pdf
 app.log
+Cours.pdf
+Cours.txt
+
+# Test output artifacts
+tests/tp1/utils/output/
+
+# Scripts and tools
+scripts_tests/
+
+# Virtual environment and logs
+*.log
+

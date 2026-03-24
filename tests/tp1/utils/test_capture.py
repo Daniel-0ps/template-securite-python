@@ -1,71 +1,82 @@
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from src.tp1.utils.capture import Capture
+from collections import defaultdict
 
 
-def test_capture_init():
+@patch('src.tp1.utils.capture.choose_interface', return_value='eth0')
+def test_capture_init(mock_choose):
     # When
     capture = Capture()
 
     # Then
-    assert capture.interface == ""
+    assert capture.interface == 'eth0'
     assert capture.summary == ""
+    assert isinstance(capture.packets, list)
+    assert isinstance(capture.protocols_count, defaultdict)
+    assert isinstance(capture.attacks, list)
 
 
-def test_capture_trafic():
-    # Given
-    capture = Capture()
-
+@patch('src.tp1.utils.capture.choose_interface', return_value=None)
+def test_capture_init_no_interface(mock_choose):
     # When
-    capture.capture_traffic()
+    capture = Capture()
 
     # Then
-    # This is a minimal test since the method doesn't do much yet
-    assert capture.interface == ""
+    assert capture.interface is None
 
 
-def test_sort_network_protocols():
+@patch('src.tp1.utils.capture.choose_interface', return_value='eth0')
+def test_sort_network_protocols(mock_choose):
     # Given
     capture = Capture()
+    capture.protocols_count['TCP'] = 25
+    capture.protocols_count['UDP'] = 15
+    capture.protocols_count['ICMP'] = 8
 
     # When
     result = capture.sort_network_protocols()
 
     # Then
-    assert result is None  # Method currently returns None
+    assert isinstance(result, dict)
+    assert result['TCP'] == 25
+    # Verify sorting (descending by count)
+    keys = list(result.keys())
+    assert keys[0] == 'TCP'
 
 
-def test_get_all_protocols():
+@patch('src.tp1.utils.capture.choose_interface', return_value='eth0')
+def test_get_all_protocols(mock_choose):
     # Given
     capture = Capture()
+    capture.protocols_count['TCP'] = 25
+    capture.protocols_count['UDP'] = 15
 
     # When
     result = capture.get_all_protocols()
 
     # Then
-    assert result is None  # Method currently returns None
+    assert isinstance(result, dict)
+    assert result['TCP'] == 25
+    assert result['UDP'] == 15
 
 
-def test_analyse():
+@patch('src.tp1.utils.capture.choose_interface', return_value='eth0')
+def test_analyse(mock_choose):
     # Given
     capture = Capture()
+    capture.protocols_count['TCP'] = 25
+    capture.packets = [MagicMock(), MagicMock()]
 
     # When
-    with (
-        patch.object(capture, "get_all_protocols") as mock_get_protocols,
-        patch.object(capture, "sort_network_protocols") as mock_sort,
-        patch.object(capture, "gen_summary") as mock_gen_summary,
-    ):
-        mock_gen_summary.return_value = "Test summary"
-        capture.analyse("tcp")
+    capture.analyse()
 
     # Then
-    mock_get_protocols.assert_called_once()
-    mock_sort.assert_called_once()
-    mock_gen_summary.assert_called_once()
-    assert capture.summary == "Test summary"
+    assert capture.summary != ""
+    assert "Total de paquets capturés" in capture.summary
 
 
-def test_get_summary():
+@patch('src.tp1.utils.capture.choose_interface', return_value='eth0')
+def test_get_summary(mock_choose):
     # Given
     capture = Capture()
     capture.summary = "Test summary"
@@ -77,12 +88,18 @@ def test_get_summary():
     assert result == "Test summary"
 
 
-def test_gen_summary():
+@patch('src.tp1.utils.capture.choose_interface', return_value='eth0')
+def test_gen_summary(mock_choose):
     # Given
     capture = Capture()
+    capture.packets = [MagicMock(), MagicMock()]
+    capture.protocols_count['TCP'] = 25
+    capture.attacks = []
 
     # When
     result = capture.gen_summary()
 
     # Then
-    assert result == ""  # Method currently returns empty string
+    assert "Total de paquets capturés" in result
+    assert "TCP" in result
+    assert "Aucune attaque détectée" in result
